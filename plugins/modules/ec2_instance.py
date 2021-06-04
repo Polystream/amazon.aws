@@ -252,6 +252,10 @@ options:
     description:
       - Whether to allow detailed cloudwatch metrics to be collected, enabling more detailed alerting.
     type: bool
+  hibernation_options:
+    description:
+      - Whether to set hibernation to enabled or not
+    type: bool
   ebs_optimized:
     description:
       - Whether instance is should use optimized EBS volumes, see U(https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSOptimized.html).
@@ -1195,7 +1199,9 @@ def build_top_level_options(params):
         spec['CpuOptions'] = {}
         spec['CpuOptions']['ThreadsPerCore'] = params.get('cpu_options').get('threads_per_core')
         spec['CpuOptions']['CoreCount'] = params.get('cpu_options').get('core_count')
-    spec['HibernationOptions'] = { 'Configured': True}
+    if params.get('hibernation_options', False):
+        spec['HibernationOptions'] = { 'Configured': True}
+    
     return spec
 
 
@@ -1733,6 +1739,7 @@ def main():
         instance_ids=dict(default=[], type='list', elements='str'),
         network=dict(default=None, type='dict'),
         volumes=dict(default=None, type='list', elements='dict'),
+        hibernation_options=dict(type='bool')
     )
     # running/present are synonyms
     # as are terminated/absent
