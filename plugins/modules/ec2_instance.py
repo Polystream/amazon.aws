@@ -1195,6 +1195,7 @@ def build_top_level_options(params):
         spec['CpuOptions'] = {}
         spec['CpuOptions']['ThreadsPerCore'] = params.get('cpu_options').get('threads_per_core')
         spec['CpuOptions']['CoreCount'] = params.get('cpu_options').get('core_count')
+    spec['hibernation_options'] = { 'Configured': True}
     return spec
 
 
@@ -1760,7 +1761,6 @@ def main():
             # all states except shutting-down and terminated
             'instance-state-name': ['pending', 'running', 'stopping', 'stopped']
         }
-        filters['hibernation_options'] = { 'Configured': True}
         if state == 'stopped':
             # only need to change instances that aren't already stopped
             filters['instance-state-name'] = ['stopping', 'pending', 'running']
