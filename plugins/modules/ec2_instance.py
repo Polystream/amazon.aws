@@ -37,6 +37,11 @@ options:
       - Whether or not to wait for the desired state (use wait_timeout to customize this).
     default: true
     type: bool
+  hibernation_options:
+    description:
+      - pass the hibernation parameter to the ec2 instances on creation
+    type: bool
+    default: false
   wait_timeout:
     description:
       - How long to wait (in seconds) for the instance to finish booting/terminating.
@@ -276,6 +281,11 @@ options:
     description:
       - The placement group that needs to be assigned to the instance
     type: str
+  hibernation_options:
+    description:
+      - Indicates whether the instance is enabled for hibernation or not
+    default: false
+    type: bool
 
 extends_documentation_fragment:
 - amazon.aws.aws
@@ -1732,6 +1742,7 @@ def main():
         instance_ids=dict(default=[], type='list', elements='str'),
         network=dict(default=None, type='dict'),
         volumes=dict(default=None, type='list', elements='dict'),
+        hibernation_options = module.params.get('hibernation_options')
     )
     # running/present are synonyms
     # as are terminated/absent
@@ -1760,6 +1771,8 @@ def main():
             # all states except shutting-down and terminated
             'instance-state-name': ['pending', 'running', 'stopping', 'stopped']
         }
+        filters['hibernation_options'] = { 'Configured': True}
+        
         if state == 'stopped':
             # only need to change instances that aren't already stopped
             filters['instance-state-name'] = ['stopping', 'pending', 'running']
@@ -1794,6 +1807,7 @@ def main():
                 filters['image-id'] = [module.params.get('image', {}).get('id')]
 
         module.params['filters'] = filters
+
 
     if module.params.get('cpu_options') and not module.botocore_at_least('1.10.16'):
         module.fail_json(msg="cpu_options is only supported with botocore >= 1.10.16")
