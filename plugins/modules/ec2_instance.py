@@ -1195,7 +1195,7 @@ def build_top_level_options(params):
         spec['CpuOptions'] = {}
         spec['CpuOptions']['ThreadsPerCore'] = params.get('cpu_options').get('threads_per_core')
         spec['CpuOptions']['CoreCount'] = params.get('cpu_options').get('core_count')
-    spec['hibernation_options'] = { 'Configured': True}
+    spec['HibernationOptions'] = { 'Configured': True}
     return spec
 
 
