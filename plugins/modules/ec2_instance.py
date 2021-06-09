@@ -1256,7 +1256,7 @@ def await_instances(ids, state='OK'):
     state_opts = {
         'OK': 'instance_status_ok',
         'STOPPED': 'instance_stopped',
-        'HIBERNATED': 'instance_hibernated',
+        'HIBERNATED': 'instance_stopped',
         'TERMINATED': 'instance_terminated',
         'EXISTS': 'instance_exists',
         'RUNNING': 'instance_running',
