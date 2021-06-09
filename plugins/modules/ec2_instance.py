@@ -1569,7 +1569,8 @@ def change_instance_state(filters, desired_state, ec2):
                 # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html
                 resp = ec2.terminate_instances(aws_retry=True, InstanceIds=[inst['InstanceId']])
                 [changed.add(i['InstanceId']) for i in resp['TerminatingInstances']]
-            if desired_state == 'STOPPED':
+            if desired_state in ('STOPPED','HIBERNATED'):
+                
                 if inst['State']['Name'] in ('stopping', 'stopped'):
                     unchanged.add(inst['InstanceId'])
                     continue
@@ -1578,18 +1579,12 @@ def change_instance_state(filters, desired_state, ec2):
                     changed.add(inst['InstanceId'])
                     continue
 
-                resp = ec2.stop_instances(aws_retry=True, InstanceIds=[inst['InstanceId']])
-                [changed.add(i['InstanceId']) for i in resp['StoppingInstances']]
-            if desired_state == 'HIBERNATED':
-                if inst['State']['Name'] in ('stopping', 'stopped'):
-                    unchanged.add(inst['InstanceId'])
-                    continue
+                if desired_state == 'HIBERNATED':
+                    hibernate = True
+                else:
+                    hibernate = False
 
-                if module.check_mode:
-                    changed.add(inst['InstanceId'])
-                    continue
-
-                resp = ec2.stop_instances(Hibernate=True, aws_retry=True, InstanceIds=[inst['InstanceId']])
+                resp = ec2.stop_instances(Hibernate=hibernate, aws_retry=True, InstanceIds=[inst['InstanceId']])
                 [changed.add(i['InstanceId']) for i in resp['StoppingInstances']]
             if desired_state == 'RUNNING':
                 if module.check_mode:
