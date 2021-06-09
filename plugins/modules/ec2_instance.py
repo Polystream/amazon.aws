@@ -1590,7 +1590,7 @@ def change_instance_state(filters, desired_state, ec2):
                     continue
 
                 resp = ec2.stop_instances(Hibernate=True, aws_retry=True, InstanceIds=[inst['InstanceId']])
-                [changed.add(i['InstanceId']) for i in resp['HibernatingInstances']]
+                [changed.add(i['InstanceId']) for i in resp['StoppingInstances']]
             if desired_state == 'RUNNING':
                 if module.check_mode:
                     changed.add(inst['InstanceId'])
