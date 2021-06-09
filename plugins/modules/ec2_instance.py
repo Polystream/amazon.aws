@@ -29,7 +29,7 @@ options:
   state:
     description:
       - Goal state for the instances.
-    choices: [present, terminated, running, started, stopped, restarted, rebooted, absent]
+    choices: [present, terminated, running, started, stopped, hibernated, restarted, rebooted, absent]
     default: present
     type: str
   wait:
@@ -1256,6 +1256,7 @@ def await_instances(ids, state='OK'):
     state_opts = {
         'OK': 'instance_status_ok',
         'STOPPED': 'instance_stopped',
+        'HIBERNATED': 'instance_stopped',
         'TERMINATED': 'instance_terminated',
         'EXISTS': 'instance_exists',
         'RUNNING': 'instance_running',
@@ -1508,6 +1509,25 @@ def ensure_instance_state(state, ec2):
             stop_failed=[],
             instances=[pretty_instance(i) for i in instances],
         )
+    elif state in ('hibernated',):
+        changed, failed, instances, failure_reason = change_instance_state(
+            filters=module.params.get('filters'),
+            desired_state='HIBERNATED',
+            ec2=ec2)
+
+        if failed:
+            module.fail_json(
+                msg="Unable to hibernate instances: {0}".format(failure_reason),
+                hibernate_success=list(changed),
+                hibernate_failed=failed)
+
+        module.exit_json(
+            msg='Instances hibernated',
+            hibernate_success=list(changed),
+            changed=bool(len(changed)),
+            hibernate_failed=[],
+            instances=[pretty_instance(i) for i in instances],
+        )
     elif state in ('absent', 'terminated'):
         terminated, terminate_failed, instances, failure_reason = change_instance_state(
             filters=module.params.get('filters'),
@@ -1529,7 +1549,7 @@ def ensure_instance_state(state, ec2):
 
 
 def change_instance_state(filters, desired_state, ec2):
-    """Takes STOPPED/RUNNING/TERMINATED"""
+    """Takes STOPPED/HIBERNATED/RUNNING/TERMINATED"""
 
     changed = set()
     instances = find_instances(ec2, filters=filters)
@@ -1549,7 +1569,8 @@ def change_instance_state(filters, desired_state, ec2):
                 # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html
                 resp = ec2.terminate_instances(aws_retry=True, InstanceIds=[inst['InstanceId']])
                 [changed.add(i['InstanceId']) for i in resp['TerminatingInstances']]
-            if desired_state == 'STOPPED':
+            if desired_state in ('STOPPED','HIBERNATED'):
+                
                 if inst['State']['Name'] in ('stopping', 'stopped'):
                     unchanged.add(inst['InstanceId'])
                     continue
@@ -1558,7 +1579,12 @@ def change_instance_state(filters, desired_state, ec2):
                     changed.add(inst['InstanceId'])
                     continue
 
-                resp = ec2.stop_instances(aws_retry=True, InstanceIds=[inst['InstanceId']])
+                if desired_state == 'HIBERNATED':
+                    hibernate = True
+                else:
+                    hibernate = False
+
+                resp = ec2.stop_instances(Hibernate=hibernate, aws_retry=True, InstanceIds=[inst['InstanceId']])
                 [changed.add(i['InstanceId']) for i in resp['StoppingInstances']]
             if desired_state == 'RUNNING':
                 if module.check_mode:
@@ -1705,7 +1731,7 @@ def run_instances(ec2, **instance_spec):
 def main():
     global module
     argument_spec = dict(
-        state=dict(default='present', choices=['present', 'started', 'running', 'stopped', 'restarted', 'rebooted', 'terminated', 'absent']),
+        state=dict(default='present', choices=['present', 'started', 'running', 'stopped', 'hibernated', 'restarted', 'rebooted', 'terminated', 'absent']),
         wait=dict(default=True, type='bool'),
         wait_timeout=dict(default=600, type='int'),
         # count=dict(default=1, type='int'),
@@ -1768,8 +1794,8 @@ def main():
             # all states except shutting-down and terminated
             'instance-state-name': ['pending', 'running', 'stopping', 'stopped']
         }
-        if state == 'stopped':
-            # only need to change instances that aren't already stopped
+        if state in ('stopped', 'hibernated') :
+            # only need to change instances that aren't already stopped or hibernated
             filters['instance-state-name'] = ['stopping', 'pending', 'running']
 
         if isinstance(module.params.get('instance_ids'), string_types):
@@ -1821,7 +1847,7 @@ def main():
 
     if state in ('present', 'running', 'started'):
         ensure_present(existing_matches=existing_matches, changed=changed, ec2=ec2, state=state)
-    elif state in ('restarted', 'rebooted', 'stopped', 'absent', 'terminated'):
+    elif state in ('restarted', 'rebooted', 'stopped', 'hibernated', 'absent', 'terminated'):
         if existing_matches:
             ensure_instance_state(state, ec2)
         else:
