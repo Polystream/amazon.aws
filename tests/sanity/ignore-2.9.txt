@@ -377,16 +377,6 @@ plugins/modules/ec2_vpc_subnet_info.py import-3.6!skip
 plugins/modules/ec2_vpc_subnet_info.py import-3.7!skip
 plugins/modules/ec2_vpc_subnet_info.py metaclass-boilerplate!skip
 plugins/modules/ec2_vpc_subnet_info.py pylint:ansible-deprecated-no-version  # We use dates for deprecations, Ansible 2.9 only supports this for compatability
-plugins/modules/s3_bucket.py compile-2.6!skip
-plugins/modules/s3_bucket.py compile-2.7!skip
-plugins/modules/s3_bucket.py compile-3.5!skip
-plugins/modules/s3_bucket.py compile-3.6!skip
-plugins/modules/s3_bucket.py compile-3.7!skip
-plugins/modules/s3_bucket.py future-import-boilerplate!skip
-plugins/modules/s3_bucket.py import-2.6!skip
-plugins/modules/s3_bucket.py import-2.7!skip
-plugins/modules/s3_bucket.py import-3.5!skip
-plugins/modules/s3_bucket.py import-3.6!skip
-plugins/modules/s3_bucket.py import-3.7!skip
-plugins/modules/s3_bucket.py metaclass-boilerplate!skip
-tests/sanity/refresh_ignore_files shebang!skip
+plugins/module_utils/compat/_ipaddress.py no-assert  # Vendored library
+plugins/module_utils/compat/_ipaddress.py no-unicode-literals  # Vendored library
+plugins/module_utils/ec2.py pylint:ansible-deprecated-no-version  # We use dates for deprecations, Ansible 2.9 only supports this for compatability

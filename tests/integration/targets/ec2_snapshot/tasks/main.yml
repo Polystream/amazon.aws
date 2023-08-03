@@ -178,6 +178,10 @@
 #        that:
 #          - result is changed
 
+    - name: Pause to avoid SnapshotCreationPerVolumeRateExceeded
+      pause:
+        seconds: 20
+
     - name: Take snapshot and tag it
       ec2_snapshot:
         volume_id: '{{ volume_id }}'
@@ -212,16 +216,18 @@
         that:
           - info_result.snapshots| length == 3
 
+    - name: Pause to avoid SnapshotCreationPerVolumeRateExceeded
+      pause:
+        seconds: 20
+
     - ec2_snapshot:
         volume_id: '{{ volume_id }}'
         snapshot_tags:
           ResourcePrefix: '{{ resource_prefix }}'
       loop: '{{ range(1, 6, 1) | list }}'
       loop_control:
-        # Anything under 15 will trigger SnapshotCreationPerVolumeRateExceeded,
-        # this should now be automatically handled, but pause a little anyway to
-        # avoid being aggressive
-        pause: 10
+        # Anything under 15 will trigger SnapshotCreationPerVolumeRateExceeded
+        pause: 20
         label: "Generate extra snapshots - {{ item }}"
 
     - name: Pause to allow creation to finish
@@ -296,7 +302,7 @@
     - assert:
         that:
           - info_result.snapshots| length == 7
-          - tagged_snapshot_id not in ( info_result.snapshots | map(attribute='snapshot_id') | list )
+          - '"{{ tagged_snapshot_id }}" not in "{{ info_result| community.general.json_query("snapshots[].snapshot_id") }}"'
 
     - name: Delete snapshots
       ec2_snapshot:
